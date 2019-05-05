@@ -6,6 +6,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <time.h>
+
+#define FUSE_USE_VERSION 30
+
+static struct fuse_operations operations = {
+  .getattr = do_getattr,
+  .readdir = do_readdir,
+  .read = do_read,
+
+}
+
 
 // Model of the fuse_structed used
 // struct fuse_context {
@@ -18,6 +30,6 @@
 // };
 
 int main (int argc, char *argv[]){
-  struct fuse_context * context;
-
+  
+  return fuse_main(argc, argv, &operations, NULL);
 }
