@@ -5,16 +5,16 @@ OBJ= main.o
 
 %.o: %.c
 
-   		$(CC) -c -o $@ $< $(CFLAGS) $(LFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS) $(LFLAGS)
 
 rebirth: $(OBJ)
 
-			$(CC) -o $@ $^ $(CFLAGS) $(LFLAGS)
+	$(CC) -o $@ $^ $(CFLAGS) $(LFLAGS)
 
 .PHONY: clean
 
 clean:
-    		rm *	.o
+	rm *.o
 
 run:
-				./rebirth
+	./rebirth
