@@ -1,23 +1,23 @@
-//#include <linux/fuse.h>
-#include <errno.h>
+#define FUSE_USE_VERSION 30
+
 #include <fuse.h>
-#include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <time.h>
-
-#define FUSE_USE_VERSION 30
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <stdarg.h>
 
 static struct fuse_operations operations = {
-  .getattr = do_getattr,
-  .readdir = do_readdir,
-  .read = do_read,
+    .getattr  = do_getattr,
+    .readdir  = do_readdir,
+    .read   = do_read,
+    .readlink = do_readlink,
 
-  .readlink = do_readlink,
-  // no .getdir -- that's deprecated
+  //other funcs
+  //getdir is deprec  
   .getdir = NULL,
   .mknod = do_mknod,
   .mkdir = do_mkdir,
@@ -53,10 +53,9 @@ static struct fuse_operations operations = {
   .destroy = do_destroy,
   .access = do_access,
   .ftruncate = do_ftruncate,
-  .fgetattr = do_fgetattr
-}
+  .fgetattr = do_fgetattr,
+};
 
-typedef int (*fuse_fill_dir_t) (void *buf, const char *name, const struct stat *stbuf, off_t off);
 
 static int do_getattr( const char *path, struct stat *st )
 {
@@ -97,6 +96,33 @@ static int do_readdir( const char *path, void *buffer, fuse_fill_dir_t filler, o
 
   	return 0;
 }
+
+
+static int do_read( const char *path, char *buffer, size_t size, off_t offset, struct fuse_file_info *fi )
+{
+  printf( "--> Trying to read %s, %u, %u\n", path, offset, size );
+  
+  char file54Text[] = "Hello World From File54!";
+  char file349Text[] = "Hello World From File349!";
+  char *selectedText = NULL;
+  
+  // ... //
+  
+  if ( strcmp( path, "/file54" ) == 0 )
+    selectedText = file54Text;
+  else if ( strcmp( path, "/file349" ) == 0 )
+    selectedText = file349Text;
+  else
+    return -1;
+  
+  // ... //
+  
+  memcpy( buffer, selectedText + offset, size );
+    
+  return strlen( selectedText ) - offset;
+}
+
+
 
 int main (int argc, char *argv[]){
 
