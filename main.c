@@ -11,10 +11,10 @@
 #include <stdarg.h>
 
 static struct fuse_operations operations = {
-    .getattr  = do_getattr,
-    .readdir  = do_readdir,
-    .read   = do_read,
-    .readlink = do_readlink,
+  .getattr  = do_getattr, // called when the system tries to get the attributes of the file. similar to stat
+  .readdir  = do_readdir, //
+  .read   = do_read,
+  .readlink = do_readlink,
 
   //other funcs
   //getdir is deprec  
@@ -106,7 +106,6 @@ static int do_read( const char *path, char *buffer, size_t size, off_t offset, s
   char file349Text[] = "Hello World From File349!";
   char *selectedText = NULL;
   
-  // ... //
   
   if ( strcmp( path, "/file54" ) == 0 )
     selectedText = file54Text;
@@ -114,8 +113,6 @@ static int do_read( const char *path, char *buffer, size_t size, off_t offset, s
     selectedText = file349Text;
   else
     return -1;
-  
-  // ... //
   
   memcpy( buffer, selectedText + offset, size );
     
