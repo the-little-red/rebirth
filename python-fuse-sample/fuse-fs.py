@@ -5,7 +5,8 @@ import errno
 import logging
 import time
 import threading
-
+#verify: https://github.com/pleiszenburg/loggedfs-python
+#https://www.thepythoncorner.com/2019/01/how-to-create-a-watchdog-in-python-to-look-for-filesystem-changes/
 
 from fuse import FUSE, FuseOSError, Operations
 
