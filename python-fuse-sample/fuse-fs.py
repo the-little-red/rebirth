@@ -2,6 +2,10 @@
 import os
 import sys
 import errno
+import logging
+import time
+import threading
+
 
 from fuse import FUSE, FuseOSError, Operations
 
@@ -125,6 +129,7 @@ class Passthrough(Operations):
 
 
 def main(mountpoint, root):
+    logging.getLogger().setLevel(logging.INFO)
     FUSE(Passthrough(root), mountpoint, nothreads=True, foreground=True)
 
 if __name__ == '__main__':
