@@ -1,20 +1,33 @@
 #!/usr/bin/env python
 #|**********************************************************************;
 #* Project           : Rebirth is a Fuse filesystem written in python that can detect ransomware attacks.
-#*                     Rebirth uses as base code the Passthrough Fuse filsesystem (https://www.stavros.io/posts/python-fuse-filesystem/)
-#*                      And a watchdog (https://www.thepythoncorner.com/2019/01/how-to-create-a-watchdog-in-python-to-look-for-filesystem-changes/)
-#* Program name      : fuse-fs.py
+#*                     Rebirth uses as base code the Passthrough Fuse filesystem (https://www.stavros.io/posts/python-fuse-filesystem/)
+#*                     And a watchdog (https://www.thepythoncorner.com/2019/01/how-to-create-a-watchdog-in-python-to-look-for-filesystem-changes/)
+#*                     So it can mount a simple filesystem in user space and detect any changes in files.
+#*                     The ransomware detection is my original code and will follow GPU's license.
+#*                     Special Credits to Davide Mastromatteo (Python Watchdog) and Stavros Korokithakis (Fuse Filesystem) since at least 50% of this code is heavyly based on their code guides (links).
 #*
-#* Author            : Arianne de Paula Bortolan GRR20140220
-#                    : Dante da Silva Aleo GRR20171593
+#* Program name      : rebirth.py
 #*
-#* Date created      : 24/05/2019
+#* Author            : Arianne de Paula Bortolan (the-little-red)
 #*
-#* Purpose           : Stream tweets do clients who can do data mining on it
+#* Purpose           : Identify ransomware attacks on a filesystem and alert the user about it. 
 #*
-#* Last Edit         : 24/05/2019
+#* Last Edit         : 04/09/2019
 #*
 #|**********************************************************************;
+TODO: finish watchdog, add metrics to detect the ransomware, testing
+# Some Reference links:
+# =======
+
+# https://github.com/pleiszenburg/loggedfs-python
+# https://www.thepythoncorner.com/2019/01/how-to-create-a-watchdog-in-python-to-look-for-filesystem-changes/
+# https://info.cs.st-andrews.ac.uk/student-handbook/files/project-library/sh/Dooler.pdf
+# https://pythonhosted.org/watchdog/
+# https://pdfs.semanticscholar.org/bf0b/2b96f4329ec6f28fabc80d64ca9c03307d9a.pdf
+
+# Library's
+# =======
 
 import os
 import sys
@@ -23,15 +36,45 @@ import logging
 import time
 import threading
 import time
+import math
+import string
+import fileinput
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
-#verify: https://github.com/pleiszenburg/loggedfs-python
-#going to add a watch dog
-#https://www.thepythoncorner.com/2019/01/how-to-create-a-watchdog-in-python-to-look-for-filesystem-changes/
-#https://info.cs.st-andrews.ac.uk/student-handbook/files/project-library/sh/Dooler.pdf
-
 from fuse import FUSE, FuseOSError, Operations
 
+# Shannon entropy base codes:
+# Stolen from Ero Carrera
+# http://blog.dkbza.org/2007/05/scanning-data-for-entropy-anomalies.html
+
+# def range_bytes (): return range(256)
+# def range_printable(): return (ord(c) for c in string.printable)
+# def H(data, iterator=range_bytes):
+#     if not data:
+#         return 0
+#     entropy = 0
+#     for x in iterator():
+#         p_x = float(data.count(chr(x)))/len(data)
+#         if p_x > 0:
+#             entropy += - p_x*math.log(p_x, 2)
+#     return entropy
+# def main ():
+#     for row in fileinput.input():
+#         string = row.rstrip('\n')
+#         print ("%s: %f" % (string, H(string, range_printable)))
+#https://rosettacode.org/wiki/Entropy#Python:_More_succinct_version
+# >>> import math
+# >>> from collections import Counter
+# >>> 
+# >>> def entropy(s):
+# ...     p, lns = Counter(s), float(len(s))
+# ...     return -sum( count/lns * math.log(count/lns, 2) for count in p.values()
+
+for str in ['gargleblaster', 'tripleee', 'magnus', 'lkjasdlk',
+               'aaaaaaaa', 'sadfasdfasdf', '7&wS/p(']:
+    print ("%s: %f" % (str, H(str, range_printable)))
+# Classes
+# =======
 
 class FuseR(Operations):
     def __init__(self, root):
@@ -98,7 +141,6 @@ class FuseR(Operations):
     def statfs(self, path):
         full_path = self._full_path(path)
         stv = os.statvfs(full_path)
-	print("ls done")
         return dict((key, getattr(stv, key)) for key in ('f_bavail', 'f_bfree',
             'f_blocks', 'f_bsize', 'f_favail', 'f_ffree', 'f_files', 'f_flag',
             'f_frsize', 'f_namemax'))
@@ -151,14 +193,30 @@ class FuseR(Operations):
     def fsync(self, path, fdatasync, fh):
         return self.flush(path, fh)
 
+    # Watchdog methods    
+    def on_created(event):
+        print(f"hey, {event.src_path} has been created!")
+
+    def on_deleted(event):
+        print(f"what the f**k! Someone deleted {event.src_path}!")
+
+    def on_modified(event):
+        print(f"hey buddy, {event.src_path} has been modified")
+
+    def on_moved(event):
+        print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
+
+
+# Main
+# =======
 
 def main(mountpoint, root):
     FUSE(FuseR(root), mountpoint, nothreads=True, foreground=True)
 
-if __name__ == '__main__':
-    patterns = "*"
-    ignore_patterns = ""
-    ignore_directories = False
-    case_sensitive = True
+if __name__ == '__main__':        
+    patterns = "*" #File patterns the event handler will deal with, since is *, it will handle all patterns
+    ignore_patterns = "" #File patterns that will be ignored by the watchdog
+    ignore_directories = False #True if want to be notified just by regular files (not directories)
+    case_sensitive = True #Make the patterns case sensitive
     my_event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_directories, case_sensitive)
     main(sys.argv[2], sys.argv[1])
