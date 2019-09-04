@@ -1,11 +1,32 @@
 #!/usr/bin/env python
+#|**********************************************************************;
+#* Project           : Rebirth is a Fuse filesystem written in python that can detect ransomware attacks.
+#*                     Rebirth uses as base code the Passthrough Fuse filsesystem (https://www.stavros.io/posts/python-fuse-filesystem/)
+#*                      And a watchdog (https://www.thepythoncorner.com/2019/01/how-to-create-a-watchdog-in-python-to-look-for-filesystem-changes/)
+#* Program name      : fuse-fs.py
+#*
+#* Author            : Arianne de Paula Bortolan GRR20140220
+#                    : Dante da Silva Aleo GRR20171593
+#*
+#* Date created      : 24/05/2019
+#*
+#* Purpose           : Stream tweets do clients who can do data mining on it
+#*
+#* Last Edit         : 24/05/2019
+#*
+#|**********************************************************************;
+
 import os
 import sys
 import errno
 import logging
 import time
 import threading
+import time
+from watchdog.observers import Observer
+from watchdog.events import PatternMatchingEventHandler
 #verify: https://github.com/pleiszenburg/loggedfs-python
+#going to add a watch dog
 #https://www.thepythoncorner.com/2019/01/how-to-create-a-watchdog-in-python-to-look-for-filesystem-changes/
 #https://info.cs.st-andrews.ac.uk/student-handbook/files/project-library/sh/Dooler.pdf
 
@@ -132,8 +153,12 @@ class FuseR(Operations):
 
 
 def main(mountpoint, root):
-    logging.getLogger().setLevel(logging.INFO)
     FUSE(FuseR(root), mountpoint, nothreads=True, foreground=True)
 
 if __name__ == '__main__':
+    patterns = "*"
+    ignore_patterns = ""
+    ignore_directories = False
+    case_sensitive = True
+    my_event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_directories, case_sensitive)
     main(sys.argv[2], sys.argv[1])
