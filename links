@@ -3,7 +3,7 @@ http://www.maastaar.net/fuse/linux/filesystem/c/2016/05/21/writing-a-simple-file
 https://www.socallinuxexpo.org/scale7x/sites/scale7x.socallinuxexpo.org/files/james-shewmaker-CustomFS.pdf
 https://www.stavros.io/posts/python-fuse-filesystem/
 https://github.com/libfuse/python-fuse/blob/master/README.new_fusepy_api
-
+https://fusepy.readthedocs.io/en/latest/fusell.html
 inotify - monitor file changes
 http://man7.org/linux/man-pages/man7/inotify.7.html
 https://developer.ibm.com/tutorials/l-ubuntu-inotify/

@@ -77,7 +77,7 @@ from fuse import FUSE, FuseOSError, Operations
 
 #https://stackoverflow.com/questions/11114492/check-if-a-file-is-not-open-not-used-by-other-process-in-python
 #
-
+#https://stackoverflow.com/questions/38916777/python-library-for-handling-linuxs-audit-log
 # Classes
 # =======
 
