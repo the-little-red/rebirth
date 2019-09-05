@@ -75,6 +75,9 @@ from fuse import FUSE, FuseOSError, Operations
 #                'aaaaaaaa', 'sadfasdfasdf', '7&wS/p(']:
 #     print ("%s: %f" % (str, H(str, range_printable)))
 
+#https://stackoverflow.com/questions/11114492/check-if-a-file-is-not-open-not-used-by-other-process-in-python
+#
+
 # Classes
 # =======
 
