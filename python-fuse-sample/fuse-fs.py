@@ -16,7 +16,7 @@
 #* Last Edit         : 04/09/2019
 #*
 #|**********************************************************************;
-TODO: finish watchdog, add metrics to detect the ransomware, testing
+#TODO: finish watchdog, add metrics to detect the ransomware, testing
 # Some Reference links:
 # =======
 
@@ -74,22 +74,6 @@ from fuse import FUSE, FuseOSError, Operations
 # for str in ['gargleblaster', 'tripleee', 'magnus', 'lkjasdlk',
 #                'aaaaaaaa', 'sadfasdfasdf', '7&wS/p(']:
 #     print ("%s: %f" % (str, H(str, range_printable)))
-
-class Epitaph():
-    def __init__ (patterns, ignore_patterns, ignore_directories, case_sensitive):
-        self.event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_directories, case_sensitive)
-    # Watchdog methods
-    def on_created(event):
-        print(f"{event.src_path} has been created!")
-
-    def on_deleted(event):
-        print(f"{event.src_path} deleted")
-
-    def on_modified(event):
-        print(f"{event.src_path} has been modified")
-
-    def on_moved(event):
-        print(f"{event.src_path}  moved to {event.dest_path}")
 
 # Classes
 # =======
@@ -211,11 +195,24 @@ class FuseR(Operations):
     def fsync(self, path, fdatasync, fh):
         return self.flush(path, fh)
 
+# Watchdog methods
+# =======
+def on_created(event):
+    print(f"{event.src_path} has been created!")
+
+def on_deleted(event):
+    print(f"{event.src_path} deleted")
+
+def on_modified(event):
+    print(f"{event.src_path} has been modified")
+
+def on_moved(event):
+    print(f"{event.src_path}  moved to {event.dest_path}")
+
 # Main
 # =======
 
 def main(mountpoint, root, event):
-    #path = "."
     go_recursively = True
     the_observer = Observer()
     the_observer.schedule(event, mountpoint, recursive=go_recursively)
@@ -224,8 +221,9 @@ def main(mountpoint, root, event):
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        my_observer.stop()
-        my_observer.join()
+        the_observer.stop()
+        the_observer.join()
+
     FUSE(FuseR(root), mountpoint, nothreads=True, foreground=True)
 
 if __name__ == '__main__':
@@ -240,5 +238,9 @@ if __name__ == '__main__':
     ignore_directories = False
     #Make the patterns case sensitive
     case_sensitive = True
-    event_handler = Epitaph(patterns, ignore_patterns, ignore_directories, case_sensitive)
+    event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_directories, case_sensitive)
+    event_handler.on_created = on_created
+    event_handler.on_deleted = on_deleted
+    event_handler.on_modified = on_modified
+    event_handler.on_moved = on_moved
     main(sys.argv[2], sys.argv[1], event_handler)
