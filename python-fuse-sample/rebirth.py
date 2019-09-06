@@ -40,6 +40,7 @@ import time
 import math
 import string
 import fileinput
+import subprocess #can use system commands
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 from fuse import FUSE, FuseOSError, Operations
