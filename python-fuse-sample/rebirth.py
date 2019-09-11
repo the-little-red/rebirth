@@ -11,12 +11,12 @@
 #*
 #* Author            : Arianne de Paula Bortolan (the-little-red)
 #*
-#* Purpose           : Identify ransomware attacks on a filesystem and alert the user about it. 
+#* Purpose           : Identify ransomware attacks on a filesystem and alert the user about it.
 #*
 #* Last Edit         : 04/09/2019
 #*
 #|**********************************************************************;
-TODO: finish watchdog, add metrics to detect the ransomware, testing
+#TODO: finish watchdog, add metrics to detect the ransomware, testing
 # Some Reference links:
 # =======
 
@@ -25,6 +25,7 @@ TODO: finish watchdog, add metrics to detect the ransomware, testing
 # https://info.cs.st-andrews.ac.uk/student-handbook/files/project-library/sh/Dooler.pdf
 # https://pythonhosted.org/watchdog/
 # https://pdfs.semanticscholar.org/bf0b/2b96f4329ec6f28fabc80d64ca9c03307d9a.pdf
+# https://pypi.org/project/watchdog/
 
 # Library's
 # =======
@@ -39,6 +40,7 @@ import time
 import math
 import string
 import fileinput
+import subprocess #can use system commands
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 from fuse import FUSE, FuseOSError, Operations
@@ -65,14 +67,18 @@ from fuse import FUSE, FuseOSError, Operations
 #https://rosettacode.org/wiki/Entropy#Python:_More_succinct_version
 # >>> import math
 # >>> from collections import Counter
-# >>> 
+# >>>
 # >>> def entropy(s):
 # ...     p, lns = Counter(s), float(len(s))
 # ...     return -sum( count/lns * math.log(count/lns, 2) for count in p.values()
 
-for str in ['gargleblaster', 'tripleee', 'magnus', 'lkjasdlk',
-               'aaaaaaaa', 'sadfasdfasdf', '7&wS/p(']:
-    print ("%s: %f" % (str, H(str, range_printable)))
+# for str in ['gargleblaster', 'tripleee', 'magnus', 'lkjasdlk',
+#                'aaaaaaaa', 'sadfasdfasdf', '7&wS/p(']:
+#     print ("%s: %f" % (str, H(str, range_printable)))
+
+#https://stackoverflow.com/questions/11114492/check-if-a-file-is-not-open-not-used-by-other-process-in-python
+#
+#https://stackoverflow.com/questions/38916777/python-library-for-handling-linuxs-audit-log
 # Classes
 # =======
 
@@ -193,30 +199,52 @@ class FuseR(Operations):
     def fsync(self, path, fdatasync, fh):
         return self.flush(path, fh)
 
-    # Watchdog methods    
-    def on_created(event):
-        print(f"hey, {event.src_path} has been created!")
+# Watchdog methods
+# =======
+def on_created(event):
+    print(f"{event.src_path} has been created!")
 
-    def on_deleted(event):
-        print(f"what the f**k! Someone deleted {event.src_path}!")
+def on_deleted(event):
+    print(f"{event.src_path} deleted")
 
-    def on_modified(event):
-        print(f"hey buddy, {event.src_path} has been modified")
+def on_modified(event):
+    print(f"{event.src_path} has been modified")
 
-    def on_moved(event):
-        print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
-
+def on_moved(event):
+    print(f"{event.src_path}  moved to {event.dest_path}")
 
 # Main
 # =======
 
-def main(mountpoint, root):
+def main(mountpoint, root, event):
+    go_recursively = True
+    the_observer = Observer()
+    the_observer.schedule(event, mountpoint, recursive=go_recursively)
+    the_observer.start()
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        the_observer.stop()
+        the_observer.join()
+
     FUSE(FuseR(root), mountpoint, nothreads=True, foreground=True)
 
-if __name__ == '__main__':        
-    patterns = "*" #File patterns the event handler will deal with, since is *, it will handle all patterns
-    ignore_patterns = "" #File patterns that will be ignored by the watchdog
-    ignore_directories = False #True if want to be notified just by regular files (not directories)
-    case_sensitive = True #Make the patterns case sensitive
-    my_event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_directories, case_sensitive)
-    main(sys.argv[2], sys.argv[1])
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
+    #File patterns the event handler will deal with, since is *, it will handle all patterns
+    patterns = "*"
+    #File patterns that will be ignored by the watchdog
+    ignore_patterns = ""
+    #True if want to be notified just by regular files (not directories)
+    ignore_directories = False
+    #Make the patterns case sensitive
+    case_sensitive = True
+    event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_directories, case_sensitive)
+    event_handler.on_created = on_created
+    event_handler.on_deleted = on_deleted
+    event_handler.on_modified = on_modified
+    event_handler.on_moved = on_moved
+    main(sys.argv[2], sys.argv[1], event_handler)
