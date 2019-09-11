@@ -26,6 +26,7 @@
 # https://pythonhosted.org/watchdog/
 # https://pdfs.semanticscholar.org/bf0b/2b96f4329ec6f28fabc80d64ca9c03307d9a.pdf
 # https://pypi.org/project/watchdog/
+# https://www.thepythoncorner.com/2017/08/logging-in-python/
 
 # Library's
 # =======
