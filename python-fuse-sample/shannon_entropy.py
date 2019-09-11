@@ -1,5 +1,7 @@
 # file_entropy.py
-#http://code.activestate.com/recipes/577476-shannon-entropy-calculation/
+#http://code.activestate.com/recipes/577476-shannon-entropy-calculaton/
+#https://kennethghartman.com/calculate-file-entropy/  	important!!!
+#https://github.com/dupgit/entropie
 # Shannon Entropy of a file
 # = minimum average number of bits per character
 # required for encoding (compressing) the file
