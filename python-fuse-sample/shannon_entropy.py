@@ -12,7 +12,7 @@
 import sys
 import math
 if len(sys.argv) != 2:
-    print "Usage: file_entropy.py [path]filename"
+    print ("Usage: file_entropy.py [path]filename")
     sys.exit()
 
 # read the whole file into a byte array
@@ -20,9 +20,9 @@ f = open(sys.argv[1], "rb")
 byteArr = map(ord, f.read())
 f.close()
 fileSize = len(byteArr)
-print 'File size in bytes:'
-print fileSize
-print
+print ('File size in bytes:')
+print (fileSize)
+print ()
 
 # calculate the frequency of each byte value in the file
 freqList = []
@@ -42,9 +42,9 @@ for freq in freqList:
     if freq > 0:
         ent = ent + freq * math.log(freq, 2)
 ent = -ent
-print 'Shannon entropy (min bits per byte-character):'
-print ent
-print
-print 'Min possible file size assuming max theoretical compression efficiency:'
-print (ent * fileSize), 'in bits'
-print (ent * fileSize) / 8, 'in bytes'
+print ('Shannon entropy (min bits per byte-character):')
+print (ent)
+print ()
+print ('Min possible file size assuming max theoretical compression efficiency:')
+print ("(ent * fileSize), 'in bits'")
+print ("(ent * fileSize) / 8, 'in bytes'")
