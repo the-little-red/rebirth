@@ -1,5 +1,7 @@
 # file_entropy.py
-#http://code.activestate.com/recipes/577476-shannon-entropy-calculation/
+#http://code.activestate.com/recipes/577476-shannon-entropy-calculaton/
+#https://kennethghartman.com/calculate-file-entropy/  	important!!!
+#https://github.com/dupgit/entropie
 # Shannon Entropy of a file
 # = minimum average number of bits per character
 # required for encoding (compressing) the file
@@ -11,8 +13,10 @@
 # FB - 201011291
 import sys
 import math
+from collections import Counter
+
 if len(sys.argv) != 2:
-    print "Usage: file_entropy.py [path]filename"
+    print ("Usage: file_entropy.py [path]filename")
     sys.exit()
 
 # read the whole file into a byte array
@@ -20,31 +24,36 @@ f = open(sys.argv[1], "rb")
 byteArr = map(ord, f.read())
 f.close()
 fileSize = len(byteArr)
-print 'File size in bytes:'
-print fileSize
-print
+print ('File size in bytes:')
+print (fileSize)
+print ()
+
+s = byteArr 
+p, lns = Counter(s), float(len(s))
+print (-sum( count/lns * math.log(count/lns, 2) for count in p.values())) 
+
 
 # calculate the frequency of each byte value in the file
-freqList = []
-for b in range(256):
-    ctr = 0
-    for byte in byteArr:
-        if byte == b:
-            ctr += 1
-    freqList.append(float(ctr) / fileSize)
-# print 'Frequencies of each byte-character:'
-# print freqList
-# print
+# freqList = []
+# for b in range(256):
+#     ctr = 0
+#     for byte in byteArr:
+#         if byte == b:
+#             ctr += 1
+#     freqList.append(float(ctr) / fileSize)
+# # print 'Frequencies of each byte-character:'
+# # print freqList
+# # print
 
-# Shannon entropy
-ent = 0.0
-for freq in freqList:
-    if freq > 0:
-        ent = ent + freq * math.log(freq, 2)
-ent = -ent
-print 'Shannon entropy (min bits per byte-character):'
-print ent
-print
-print 'Min possible file size assuming max theoretical compression efficiency:'
-print (ent * fileSize), 'in bits'
-print (ent * fileSize) / 8, 'in bytes'
+# # Shannon entropy
+# ent = 0.0
+# for freq in freqList:
+#     if freq > 0:
+#         ent = ent + freq * math.log(freq, 2)
+# ent = -ent
+# print ('Shannon entropy (min bits per byte-character):')
+# print (ent)
+# print ()
+# print ('Min possible file size assuming max theoretical compression efficiency:')
+# print ("(ent * fileSize), 'in bits'")
+# print ("(ent * fileSize) / 8, 'in bytes'")

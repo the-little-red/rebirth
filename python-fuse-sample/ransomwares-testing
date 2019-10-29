@@ -15,7 +15,15 @@ http://www.thesecurityblogger.com/ransom32-first-javascript-powered-ransomware-a
 5 - Xbash
 6 - Linux.Encoder
 7 - CoinVault
-8 - TeslaCrypt
 9 - CTB-Locker
 10 - CryptXXX
 11 - Ransom32
+12 - Lilocked
+
+
+Creating malware analisys box for testing: 
+https://medium.com/@pramos/why-you-need-you-a-malware-analysis-lab-and-how-to-build-it-10048eaa8e9
+https://cuckoosandbox.org/
+https://medium.com/@su13ym4n/15-online-sandboxes-for-malware-analysis-f8885ecb8a35
+#### interesting 
+https://github.com/monnappa22/Limon 

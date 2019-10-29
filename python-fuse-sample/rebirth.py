@@ -16,10 +16,10 @@
 #* Last Edit         : 04/09/2019
 #*
 #|**********************************************************************;
-#TODO: finish watchdog, add metrics to detect the ransomware, testing
-# Some Reference links:
-# =======
 
+#TODO: finish watchdog, add metrics to detect the ransomware, testing
+# Some Reference links to read:
+# =======
 # https://github.com/pleiszenburg/loggedfs-python
 # https://www.thepythoncorner.com/2019/01/how-to-create-a-watchdog-in-python-to-look-for-filesystem-changes/
 # https://info.cs.st-andrews.ac.uk/student-handbook/files/project-library/sh/Dooler.pdf
@@ -30,6 +30,12 @@
 # https://www.slideshare.net/matteobertozzi/python-fuse
 # https://www.slideshare.net/gnurag/fuse-python?next_slideshow=1
 # pynotify
+# https://www.thepythoncorner.com/2017/08/logging-in-python/
+# https://stackoverflow.com/questions/11114492/check-if-a-file-is-not-open-not-used-by-other-process-in-python
+# https://stackoverflow.com/questions/38916777/python-library-for-handling-linuxs-audit-log
+# https://rosettacode.org/wiki/Entropy
+
+
 # Library's
 # =======
 
@@ -45,41 +51,9 @@ import string
 import fileinput
 import subprocess #can use system commands
 from fuse import FUSE, FuseOSError, Operations
+from collections import Counter
 
-# Shannon entropy base codes:
-# Stolen from Ero Carrera
-# http://blog.dkbza.org/2007/05/scanning-data-for-entropy-anomalies.html
 
-# def range_bytes (): return range(256)
-# def range_printable(): return (ord(c) for c in string.printable)
-# def H(data, iterator=range_bytes):
-#     if not data:
-#         return 0
-#     entropy = 0
-#     for x in iterator():
-#         p_x = float(data.count(chr(x)))/len(data)
-#         if p_x > 0:
-#             entropy += - p_x*math.log(p_x, 2)
-#     return entropy
-# def main ():
-#     for row in fileinput.input():
-#         string = row.rstrip('\n')
-#         print ("%s: %f" % (string, H(string, range_printable)))
-#https://rosettacode.org/wiki/Entropy#Python:_More_succinct_version
-# >>> import math
-# >>> from collections import Counter
-# >>>
-# >>> def entropy(s):
-# ...     p, lns = Counter(s), float(len(s))
-# ...     return -sum( count/lns * math.log(count/lns, 2) for count in p.values()
-
-# for str in ['gargleblaster', 'tripleee', 'magnus', 'lkjasdlk',
-#                'aaaaaaaa', 'sadfasdfasdf', '7&wS/p(']:
-#     print ("%s: %f" % (str, H(str, range_printable)))
-
-#https://stackoverflow.com/questions/11114492/check-if-a-file-is-not-open-not-used-by-other-process-in-python
-#
-#https://stackoverflow.com/questions/38916777/python-library-for-handling-linuxs-audit-log
 # Classes
 # =======
 
@@ -200,6 +174,17 @@ class FuseR(Operations):
 
     def fsync(self, path, fdatasync, fh):
         return self.flush(path, fh)
+
+    def shannon(self, path, fh
+        f = open(filename, "rb")
+        byteArr = map(ord, f.read())
+        f.close()
+        fileSize = len(byteArr)
+        #print ('File size in bytes:')
+        #print (fileSize)
+        #print ()
+        p, lns = Counter(byteArr), float(len(byteArr))
+       #print (-sum( count/lns * math.log(count/lns, 2) for count in p.values())) 
 
 # Main
 # =======
