@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #|**********************************************************************;
 #* Project           : Rebirth is a Fuse filesystem written in python that can detect ransomware attacks.
 #*                     Rebirth uses as base code the Passthrough Fuse filesystem (https://www.stavros.io/posts/python-fuse-filesystem/)
@@ -26,7 +26,10 @@
 # https://pythonhosted.org/watchdog/
 # https://pdfs.semanticscholar.org/bf0b/2b96f4329ec6f28fabc80d64ca9c03307d9a.pdf
 # https://pypi.org/project/watchdog/
-
+# https://github.com/pleiszenburg/loggedfs-python/blob/master/src/loggedfs/_core/fs.py
+# https://www.slideshare.net/matteobertozzi/python-fuse
+# https://www.slideshare.net/gnurag/fuse-python?next_slideshow=1
+# pynotify
 # Library's
 # =======
 
@@ -41,8 +44,6 @@ import math
 import string
 import fileinput
 import subprocess #can use system commands
-from watchdog.observers import Observer
-from watchdog.events import PatternMatchingEventHandler
 from fuse import FUSE, FuseOSError, Operations
 
 # Shannon entropy base codes:
@@ -174,6 +175,7 @@ class FuseR(Operations):
         return os.open(full_path, flags)
 
     def create(self, path, mode, fi=None):
+        print("file %s created" % path)  
         full_path = self._full_path(path)
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
@@ -199,52 +201,15 @@ class FuseR(Operations):
     def fsync(self, path, fdatasync, fh):
         return self.flush(path, fh)
 
-# Watchdog methods
-# =======
-def on_created(event):
-    print(f"{event.src_path} has been created!")
-
-def on_deleted(event):
-    print(f"{event.src_path} deleted")
-
-def on_modified(event):
-    print(f"{event.src_path} has been modified")
-
-def on_moved(event):
-    print(f"{event.src_path}  moved to {event.dest_path}")
-
 # Main
 # =======
 
-def main(mountpoint, root, event):
-    go_recursively = True
-    the_observer = Observer()
-    the_observer.schedule(event, mountpoint, recursive=go_recursively)
-    the_observer.start()
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        the_observer.stop()
-        the_observer.join()
-
-    FUSE(FuseR(root), mountpoint, nothreads=True, foreground=True)
+def main(mountpoint, root):
+    FUSE(FuseR(root), mountpoint, nothreads=True, foreground=True,nonempty=True)
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s - %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S')
-    #File patterns the event handler will deal with, since is *, it will handle all patterns
-    patterns = "*"
-    #File patterns that will be ignored by the watchdog
-    ignore_patterns = ""
-    #True if want to be notified just by regular files (not directories)
-    ignore_directories = False
-    #Make the patterns case sensitive
-    case_sensitive = True
-    event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_directories, case_sensitive)
-    event_handler.on_created = on_created
-    event_handler.on_deleted = on_deleted
-    event_handler.on_modified = on_modified
-    event_handler.on_moved = on_moved
-    main(sys.argv[2], sys.argv[1], event_handler)
+    if (len(sys.argv) < 2) or (len(sys.argv) > 3):
+       print('usage: %s <mountpoint>' % sys.argv[0])
+       exit(1)
+       
+    main(sys.argv[2], sys.argv[1])
