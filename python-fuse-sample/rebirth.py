@@ -18,7 +18,7 @@
 #|**********************************************************************;
 
 #BASH IN PYTHON: https://stackoverflow.com/questions/13745648/running-bash-script-from-within-python
-
+#HASH in python: https://nitratine.net/blog/post/how-to-hash-files-in-python/
 
 #TODO: finish watchdog, add metrics to detect the ransomware, testing
 # Some Reference links to read:
@@ -32,6 +32,7 @@
 # https://github.com/pleiszenburg/loggedfs-python/blob/master/src/loggedfs/_core/fs.py
 # https://www.slideshare.net/matteobertozzi/python-fuse
 # https://www.slideshare.net/gnurag/fuse-python?next_slideshow=1
+#http://sciencevikinglabs.com/building-a-basic-file-integrity-monitor/
 # pynotify
 # https://www.thepythoncorner.com/2017/08/logging-in-python/
 # https://stackoverflow.com/questions/11114492/check-if-a-file-is-not-open-not-used-by-other-process-in-python
@@ -221,6 +222,11 @@ class FuseR(Operations):
 # =======
 
 def main(mountpoint, root):
+   try:
+      os.mkdir('/files_info/')
+   except FileExistsError as exc:
+      print(exc)
+
     FUSE(FuseR(root), mountpoint, nothreads=True, foreground=True,nonempty=True)
 
 if __name__ == '__main__':
