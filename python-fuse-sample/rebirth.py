@@ -149,7 +149,7 @@ class FuseR(Operations):
         return os.open(full_path, flags)
 
     def create(self, path, mode, fi=None):
-        print("file %s created" % path)  
+       # print("file %s created" % path)  
         full_path = self._full_path(path)
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
@@ -170,13 +170,22 @@ class FuseR(Operations):
         return os.fsync(fh)
 
     def release(self, path, fh):
-        return os.close(fh)
+        print("file %s created " % path) 
+        os.close(fh)
+        if (!path.isdir(path)) and (path.exists(path)):
+            filename, file_extension = os.path.splitext(path)
+            print("file: %s" % filename)
+            print("extension: %s" % file_extension)
+            if(file_extension != "swp") and (file_extension != "swx"):
+            #shannon
+            #if metrics, create or compare
+        return
 
     def fsync(self, path, fdatasync, fh):
         return self.flush(path, fh)
 
-    def shannon(self, path, fh
-        f = open(filename, "rb")
+    def shannon(self, filename, extension)
+        f = open(path, "rb")
         byteArr = map(ord, f.read())
         f.close()
         fileSize = len(byteArr)
@@ -185,6 +194,7 @@ class FuseR(Operations):
         #print ()
         p, lns = Counter(byteArr), float(len(byteArr))
        #print (-sum( count/lns * math.log(count/lns, 2) for count in p.values())) 
+        return 
 
 # Main
 # =======
