@@ -179,12 +179,14 @@ class FuseR(Operations):
             if(file_extension != "swp") and (file_extension != "swx"):
             #shannon
             #if metrics, create or compare
+            #pid of last alt str(os.getpid())
+            #if ok return else return block func
         return
 
     def fsync(self, path, fdatasync, fh):
         return self.flush(path, fh)
 
-    def shannon(self, filename, extension)
+    def shannon_hash(self, filename, extension):
         f = open(path, "rb")
         byteArr = map(ord, f.read())
         f.close()
@@ -194,6 +196,9 @@ class FuseR(Operations):
         #print ()
         p, lns = Counter(byteArr), float(len(byteArr))
        #print (-sum( count/lns * math.log(count/lns, 2) for count in p.values())) 
+        return
+
+    def block_process():
         return 
 
 # Main
