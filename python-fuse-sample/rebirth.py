@@ -17,6 +17,9 @@
 #*
 #|**********************************************************************;
 
+#BASH IN PYTHON: https://stackoverflow.com/questions/13745648/running-bash-script-from-within-python
+
+
 #TODO: finish watchdog, add metrics to detect the ransomware, testing
 # Some Reference links to read:
 # =======
