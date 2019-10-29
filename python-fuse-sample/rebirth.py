@@ -52,10 +52,12 @@ import time
 import math
 import string
 import fileinput
+import hashlib
 import subprocess #can use system commands
 from fuse import FUSE, FuseOSError, Operations
 from collections import Counter
 
+BLOCKSIZE = 65536
 
 # Classes
 # =======
@@ -192,6 +194,7 @@ class FuseR(Operations):
     def fsync(self, path, fdatasync, fh):
         return self.flush(path, fh)
 
+    #verify extension, in case matchs a malware one then signal up! 
     def shannon_hash(self, filename, extension):
         f = open(path, "rb")
         byteArr = map(ord, f.read())
@@ -202,6 +205,13 @@ class FuseR(Operations):
         #print ()
         p, lns = Counter(byteArr), float(len(byteArr))
        #print (-sum( count/lns * math.log(count/lns, 2) for count in p.values())) 
+        hasher = hashlib.sha1()
+        with open('anotherfile.txt', 'rb') as afile:
+            buf = afile.read(BLOCKSIZE)
+            while len(buf) > 0:
+                hasher.update(buf)
+                buf = afile.read(BLOCKSIZE)
+        print(hasher.hexdigest())
         return
 
     def block_process():
