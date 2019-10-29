@@ -180,10 +180,13 @@ class FuseR(Operations):
             print("file: %s" % filename)
             print("extension: %s" % file_extension)
             if(file_extension != "swp") and (file_extension != "swx"):
-            #shannon
+                print("Metrics on")		               
+                secure_change = shannon_hash(self,path,file_extension)
+                if secure_change:
+                   return
+                return block_process()
             #if metrics, create or compare
             #pid of last alt str(os.getpid())
-            #if ok return else return block func
         return
 
     def fsync(self, path, fdatasync, fh):
