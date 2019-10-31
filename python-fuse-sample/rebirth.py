@@ -39,7 +39,6 @@
 # =======
 
 import os
-import subprocess
 import sys
 import errno
 import logging
@@ -234,7 +233,7 @@ class FuseR(Operations):
         except:
            print "Not possible to stop Suspicious process!!!"
            return exit(1)
-        print "Suspicious process stoped and archives returned to original state!"
+        print "Suspicious process stopped and archives returned to original state!"
         return
 
 # Main
