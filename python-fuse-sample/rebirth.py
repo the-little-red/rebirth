@@ -7,33 +7,28 @@
 #*                     The ransomware detection is my original code and will follow GPU's license.
 #*                     Special Credits to Davide Mastromatteo (Python Watchdog) and Stavros Korokithakis (Fuse Filesystem) since at least 50% of this code is heavyly based on their code guides (links).
 #*
+#* PS                : Shannon and Hash functions are high cost functions, if trying to optimize this code, start by this guys
+#*
 #* Program name      : rebirth.py
 #*
 #* Author            : Arianne de Paula Bortolan (the-little-red)
 #*
 #* Purpose           : Identify ransomware attacks on a filesystem and alert the user about it.
 #*
-#* Last Edit         : 04/09/2019
+#* Last Edit         : 31/10/2019
 #*
 #|**********************************************************************;
 
 #BASH IN PYTHON: https://stackoverflow.com/questions/13745648/running-bash-script-from-within-python
 #HASH in python: https://nitratine.net/blog/post/how-to-hash-files-in-python/
 
-#TODO: finish watchdog, add metrics to detect the ransomware, testing
 # Some Reference links to read:
 # =======
-# https://github.com/pleiszenburg/loggedfs-python
 # https://www.thepythoncorner.com/2019/01/how-to-create-a-watchdog-in-python-to-look-for-filesystem-changes/
 # https://info.cs.st-andrews.ac.uk/student-handbook/files/project-library/sh/Dooler.pdf
-# https://pythonhosted.org/watchdog/
 # https://pdfs.semanticscholar.org/bf0b/2b96f4329ec6f28fabc80d64ca9c03307d9a.pdf
-# https://pypi.org/project/watchdog/
-# https://github.com/pleiszenburg/loggedfs-python/blob/master/src/loggedfs/_core/fs.py
 # https://www.slideshare.net/matteobertozzi/python-fuse
 # https://www.slideshare.net/gnurag/fuse-python?next_slideshow=1
-#http://sciencevikinglabs.com/building-a-basic-file-integrity-monitor/
-# pynotify
 # https://www.thepythoncorner.com/2017/08/logging-in-python/
 # https://stackoverflow.com/questions/11114492/check-if-a-file-is-not-open-not-used-by-other-process-in-python
 # https://stackoverflow.com/questions/38916777/python-library-for-handling-linuxs-audit-log
@@ -57,8 +52,6 @@ import hashlib
 import subprocess #can use system commands
 from fuse import FUSE, FuseOSError, Operations
 from collections import Counter
-
-BLOCKSIZE = 65536
 
 # Classes
 # =======
@@ -155,7 +148,7 @@ class FuseR(Operations):
         return os.open(full_path, flags)
 
     def create(self, path, mode, fi=None):
-       # print("file %s created" % path)  
+       # print("file %s created" % path)
         full_path = self._full_path(path)
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
@@ -176,27 +169,30 @@ class FuseR(Operations):
         return os.fsync(fh)
 
     def release(self, path, fh):
-        print("file %s created " % path) 
+        print("file %s created " % path)
         os.close(fh)
         if (!path.isdir(path)) and (path.exists(path)):
             filename, file_extension = os.path.splitext(path)
             print("file: %s" % filename)
             print("extension: %s" % file_extension)
             if(file_extension != "swp") and (file_extension != "swx"):
-                print("Metrics on")		               
-                secure_change = shannon_hash(self,path,file_extension)
+                print("Checking metrics mode ON!)
+                secure_change = metrics(self,path,file_extension)
                 if secure_change:
+                    print("No problems found, keep going.")
                    return
+                print("GOTCHA! Suspicious processing found! Blocking exe!!")
                 return block_process()
-            #if metrics, create or compare
             #pid of last alt str(os.getpid())
         return
 
     def fsync(self, path, fdatasync, fh):
         return self.flush(path, fh)
 
-    #verify extension, in case matchs a malware one then signal up! 
-    def shannon_hash(self, filename, extension):
+# ===== METRICS FUNCTIONS ======
+
+    #verify shannon entropy, high entropy --> high change of problems, if file type is pdf|zip|tar then ignores high entropy
+    def shannon(self, filename, extension):
         f = open(path, "rb")
         byteArr = map(ord, f.read())
         f.close()
@@ -205,18 +201,33 @@ class FuseR(Operations):
         #print (fileSize)
         #print ()
         p, lns = Counter(byteArr), float(len(byteArr))
-       #print (-sum( count/lns * math.log(count/lns, 2) for count in p.values())) 
-        hasher = hashlib.sha1()
-        with open('anotherfile.txt', 'rb') as afile:
-            buf = afile.read(BLOCKSIZE)
-            while len(buf) > 0:
-                hasher.update(buf)
-                buf = afile.read(BLOCKSIZE)
-        print(hasher.hexdigest())
+       #print (-sum( count/lns * math.log(count/lns, 2) for count in p.values()))
         return
 
+    #verify hash similarity
+    def hash_sim(self, filename, extension):
+        return
+
+    #verify changes in filetype
+    def magical():
+        return
+
+    #verify metrics, check them all, but if at least two dont pass, block by precaution
+    def metrics(self, filename, extension):
+        shannon_ok = shannon(self, filename, extension)
+        hash_ok = hash_sim(self, filename, extension)
+        magical_ok = magical(self, filename, extension)
+        if shannon_ok and hash_ok and magical_ok:
+            return True
+        if shannon_ok and magical_ok:
+            return True
+        if shannon_ok and hash_ok:
+            return True
+        return False
+
+    #for simple reasons i just ran a bash code for this one, also i restore btrfs file for precaution
     def block_process():
-        return 
+        return
 
 # Main
 # =======
@@ -233,5 +244,5 @@ if __name__ == '__main__':
     if (len(sys.argv) < 2) or (len(sys.argv) > 3):
        print('usage: %s <mountpoint>' % sys.argv[0])
        exit(1)
-       
+
     main(sys.argv[2], sys.argv[1])

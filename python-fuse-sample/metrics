@@ -1,0 +1,27 @@
+File Type Changes
+The  type  of  data  stored  in  a  file  can  be  approximatedusing  “magic  numbers.”  These  signatures  describe  the  orderand position of specific byte values unique to a file type, notsimply the header information. Since files generally retain theirfile type and formatting over the course of their existence, bulkmodification of such data should be considered suspicious.Thefileutility  is  a  popular  program  for  determiningfile  type.  The  default  “magic”  database  library  contains  hun-dreds  of  file  type  signatures,  ranging  from  specific  programs(“Microsoft Word 2007+”) to general content (“Unicode text,UTF-7”). With this tool, we can track the file type both beforeand  after  a  file  is  written.  If  this  type  changes,  we  can  inferthat some transformation has occurred. However, we note thata  single  change  in  file  type  does  not  automatically  implymalicious  actions.  For  example,  when  upgrading  to  a  newsoftware  version,  the  application  may  update  the  document’sformat to comply with a new standard.
+
+https://pypi.org/project/filemagic/
+https://stackoverflow.com/questions/10937350/how-to-check-type-of-files-without-extensions-in-python
+
+
+Similarity Measurement
+Strong  encryption  should  produce  output  that  providesno  information  about  the  plaintext  content.  Accordingly,  weassume  that  the  output  of  ransomware-encrypted  user  data  iscompletely  dissimilar  to  its  original  content.  Such  meaning-ful  changes  to  content  can  be  captured  through  the  use  of similarity-preserving  hash  functions  [27],  [40].  These  hashesdiffer  from  traditional  hash  functions  because  they  containsome information about the source file in their output. Throughmeasuring the similarity of two versions of the same file, wecan also gain information aboutdissimilarity.We  selectedsdhash[40]  for  this  metric.  This  functionoutputs  asimilarity scorefrom  0  to  100  that  describes  theconfidence of similarity between two files.sdhashassists indetermining if two files are homologous with a score of 100 in-dicating a high likelihood that two files are related. Conversely,the  authors  of  this  algorithm  note  that  a  confidence  score  of0  is  “statistically  comparable  to  that  of  two  blobs  of  randomdata,”  and  this  provides  a  key  insight  to  how  a  ransomware-encrypted  file  should  be  scored.  Given  the  similarity  hash  ofthe  previous  version  of  a  file,  a  comparison  with  the  hash  ofthe encrypted version of that file should yield no match, sincethe  ciphertext  should  be  indistinguishable  from  random  data.We should therefore obtain a near-zero score when comparingan  original  copy  of  a  user’s  file  to  a  ransomware-encryptedversion of that file
+
+https://stackoverflow.com/questions/8848991/python-digest-hash-for-string-similarity
+https://github.com/sean-public/python-hashes
+https://www.sciencedirect.com/science/article/pii/S1742287619300283
+https://github.com/sdhash/sdhash/blob/master/swig/python/test.py
+https://pypi.org/project/fuzzyhashlib/
+https://roussev.net/sdhash/tutorial/03-quick.html (range 21 - 100 strong similarity)
+
+Shannon Entropy
+Entropy  is  a  simple  indicator  that  provides  informationabout  the  uncertainty  of  data.  Some  types  of  data,  such  asencrypted  or  compressed  data,  are  naturally  high  entropy.Intuitively,  a  ransomware  attack  should  result  inconsistentlyhighentropy output as the malware reads the victim’s files andwrites the encrypted content. 
+
+============= Secondary indicators ===============
+
+File type funneling occurs  when  an  application  reads  anunusually  disparate  number  of  files  as  it  writes.  Applicationsthat  read  multiple  file  types  but  write  only  a  single  type305
+during an execution are not uncommon. A word processor, forexample, may allow the user to embed various file types (e.g.,pictures  and  audio)  but  will  typically  only  write  a  single  filetype (the output document). Ransomware takes this innocuouscase to an extreme. As ransomware encrypts and writes data,we  expect  to  see  a  smaller  number  of  output  file  types.  Bytracking  the  number  of  file  types  a  process  has  read  andwritten,  the  difference  of  these  can  be  assigned  a  thresholdbefore considering it suspicious
+
+Deletion is  a  basic  filesystem  operation  and  is  not  generallysuspicious.  For  example,  applications  often  create  and  deletetemporary  files  as  part  of  normal  operation.  However,  thedeletion  of  many  files  from  a  user’s  documents  may  indicatemalicious  activity.  Class  C  ransomware  uses  file  deletioninstead of overwriting an existing file to dispose of the originalcontent.  This  class  of  ransomware  performs  a  high  numberof  these  operations;  early  detection  of  this  type  of  malwaredepends on capturing this operation
+
