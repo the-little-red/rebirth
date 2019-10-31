@@ -39,6 +39,7 @@
 # =======
 
 import os
+import subprocess
 import sys
 import errno
 import logging
@@ -225,8 +226,15 @@ class FuseR(Operations):
             return True
         return False
 
-    #for simple reasons i just ran a bash code for this one, also i restore btrfs file for precaution
-    def block_process():
+    #yes i shouldn't be running a shell via python, but im just too lazy to try anything else, also i restore btrfs file for precaution in this same script
+    def block_process(self, PID):
+        try:
+           #subprocess.call("./stop_malware.sh", shell=True)
+           subprocess.Popen(["bash", "./stop_malware.sh",PID], shell=True)
+        except:
+           print "Not possible to stop Suspicious process!!!"
+           return exit(1)
+        print "Suspicious process stoped and archives returned to original state!"
         return
 
 # Main
