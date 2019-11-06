@@ -49,6 +49,7 @@ import math
 import string
 import fileinput
 import hashlib
+import fuzzyhashlib
 import subprocess #can use system commands
 from fuse import FUSE, FuseOSError, Operations
 from collections import Counter
@@ -176,11 +177,11 @@ class FuseR(Operations):
             print("file: %s" % filename)
             print("extension: %s" % file_extension)
             if(file_extension != "swp") and (file_extension != "swx"):
-                print("Checking metrics mode ON!)
-                secure_change = metrics(self,path,file_extension)
+                print("Checking metrics mode ON!")
+                    secure_change = metrics(self,path,file_extension)
                 if secure_change:
                     print("No problems found, keep going.")
-                   return
+                    return True
                 print("GOTCHA! Suspicious processing found! Blocking exe!!")
                 return block_process()
             #pid of last alt str(os.getpid())
