@@ -1,1 +1,3 @@
 fusepy
+filemagic
+ssdeep

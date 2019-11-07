@@ -21,7 +21,7 @@
 
 #BASH IN PYTHON: https://stackoverflow.com/questions/13745648/running-bash-script-from-within-python
 #HASH in python: https://nitratine.net/blog/post/how-to-hash-files-in-python/
-
+# ssdeep hash https://medium.com/@nikhilh20/fuzzy-hashing-ssdeep-3cade6931b72
 # Some Reference links to read:
 # =======
 # https://www.thepythoncorner.com/2019/01/how-to-create-a-watchdog-in-python-to-look-for-filesystem-changes/
@@ -33,7 +33,7 @@
 # https://stackoverflow.com/questions/11114492/check-if-a-file-is-not-open-not-used-by-other-process-in-python
 # https://stackoverflow.com/questions/38916777/python-library-for-handling-linuxs-audit-log
 # https://rosettacode.org/wiki/Entropy
-
+#
 
 # Library's
 # =======
@@ -169,16 +169,16 @@ class FuseR(Operations):
     def flush(self, path, fh):
         return os.fsync(fh)
 
-    def release(self, path, fh):
-        print("file %s created " % path)
+    def release(self, filepath, fh):
+        print("file %s created " % filepath)
         os.close(fh)
-        if (!path.isdir(path)) and (path.exists(path)):
-            filename, file_extension = os.path.splitext(path)
+        if (!os.path.isdir(filepath)) and (os.path.exists(filepath)):
+            filename, file_extension = os.path.splitext(filepath)
             print("file: %s" % filename)
             print("extension: %s" % file_extension)
             if(file_extension != "swp") and (file_extension != "swx"):
                 print("Checking metrics mode ON!")
-                    secure_change = metrics(self,path,file_extension)
+                    secure_change = metrics(self,filepath,file_extension)
                 if secure_change:
                     print("No problems found, keep going.")
                     return True
