@@ -119,7 +119,7 @@ def main(path):
     metrics_ext=".me"
     metrics_path = "./files_data/"
     print(path)
-    if (os.path.isfile(path)) and (os.path.exists(path)):
+    if (os.path.isfile(path)):
         path = os.path.basename(path)
         filename, file_extension = os.path.splitext(path)
         print("file: %s" % filename)
@@ -128,16 +128,16 @@ def main(path):
            print("Checking metrics mode ON!")
            metricsfile = str(metrics_path)+str(filename)+str(metrics_ext)
            print(metricsfile)
-           if(os.path.isfile(metricsfile)) and (os.path.exislts(metricsfile)):
-           #    secure_change = metrics(path,metricsfile)
+           if(os.path.isfile(metricsfile)):
+               secure_change = metrics(path,metricsfile)
                print("file exists!")
-               #if(secure_change):
-                #   print("No problems found, keep going.")
-               #else:
-                #   print("GOTCHA! Suspicious processing found! Blocking exe!!")
+               if(secure_change):
+                   print("No problems found, keep going.")
+               else:
+                   print("GOTCHA! Suspicious processing found! Blocking exe!!")
            else:
-               print("file dont exist!")
-                   #write_metrics(filepath,metricsfile)
+               print("file dont exist! going to write it")
+               write_metrics(filepath,metricsfile)
 
 
 if __name__ == '__main__':
