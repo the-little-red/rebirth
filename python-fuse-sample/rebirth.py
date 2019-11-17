@@ -293,6 +293,23 @@ class FuseR(Operations):
             return True
         return False
 
+    def write_metrics(self, file, filetowrite):
+        f = open(file, "rb")
+        byteArr = map(ord, f.read())
+        f.close()
+        fileSize = len(byteArr)
+        print ('File size in bytes:')
+        print (fileSize)
+        print ()
+        p, lns = Counter(byteArr), float(len(byteArr))
+        data[0] = sum( count/lns * math.log(count/lns, 2) for count in p.values())
+        data[1] = sshdeep.hash(f)
+        with magic.Magic(flags=magic.MAGIC_MIME_ENCODING) as m:
+            data[2] = m.id_filename(file)
+        with open(filetowrite, 'w') as file:
+            file.writelines(data)
+        return
+
 
     #yes i shouldn't be running a shell via python, but im just too lazy to try anything else, also i restore btrfs file for precaution in this same script
     def block_process(self, PID, LOCATION):
