@@ -50,6 +50,7 @@ import string
 import fileinput
 import hashlib
 import magic
+import ssdeep
 import subprocess #can use system commands
 from fuse import FUSE, FuseOSError, Operations, fuse_get_context
 from os import path
@@ -194,7 +195,7 @@ class FuseR(Operations):
                         return True
                     else:
                         print("GOTCHA! Suspicious processing found! Blocking exe!!")
-                        return block_process(LAST_PID)
+                        return block_process(self.LAST_PID,EXE_LOCATION)
                 else:
                     write_metrics(filepath,metricsfile)
             #pid of last alt str(os.getpid())
@@ -294,10 +295,10 @@ class FuseR(Operations):
 
 
     #yes i shouldn't be running a shell via python, but im just too lazy to try anything else, also i restore btrfs file for precaution in this same script
-    def block_process(self, PID):
+    def block_process(self, PID, LOCATION):
         try:
            #subprocess.call("./stop_malware.sh", shell=True)
-           subprocess.Popen(["bash", "./stop_malware.sh",PID], shell=True)
+           subprocess.Popen(["bash", "./stop_malware.sh",PID,LOCATION], shell=True)
         except:
            print ("Not possible to stop Suspicious process!!!")
            return exit(1)
