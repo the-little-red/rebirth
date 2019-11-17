@@ -19,16 +19,10 @@ from collections import Counter
 #verify shannon entropy, high entropy --> high change of problems, if file type is pdf|zip|tar then ignores high entropy
 def shannon(file, filetowrite):
     f = open(file, "rb")
-    byteArr = map(ord, f.read())
+    byteArr = f.read()
     f.close()
-    fileSize = len(byteArr)
-    print ('File size in bytes:')
-    print (fileSize)
-    print ()
-    p, lns = Counter(byteArr), float(len(byteArr))
-    shannon = sum( count/lns * math.log(count/lns, 2) for count in p.values())
-    print ("entropy:")
-    print (sum( count/lns * math.log(count/lns, 2) for count in p.values()))
+    p, lns = Counter(byteArr), float(os.path.getsize(file))
+    shannon = -sum( count/lns * math.log(count/lns, 2) for count in p.values())
     fw = open(file,"rb")
     with open(filetowrite, 'r') as file:
         data = file.readlines()
@@ -36,7 +30,7 @@ def shannon(file, filetowrite):
     print (data[0])
     status_ok= True
     if(data[0]):
-        if(shannon > data[0]):
+        if(shannon > float(data[0])):
             status_ok = False
             data[0]= shannon
             # and write everything back
@@ -53,11 +47,12 @@ def hash_sim(file, filetowrite):
     print (data)
     status_ok = True
     if(data):
-        f = open(file, "rb")
-        hash_actual= sshdeep.hash(f)
+
+        hash_actual= sshdeep.hash(file)
+        deep = sshdeep.compare(str(hash_actual), str(data[1]))
         #sshdash metric define as 21 - 100 a safe comparisson metric, this means that the result 21 means that
         #at least these files have some similarity
-        print(sshdeep.compare(hash_actual, data[1]))
+
         if(sshdeep.compare(hash_actual, data[1]) >= 21):
             status_ok = True
         else:
@@ -135,7 +130,7 @@ def main(path):
     print(dir)
     print(filename)
     metricsfile = str("/files_info/")+str(filename)+str(".mm")
-    write_metrics(path, metricsfile)
+    metrics(path, metricsfile)
     # if (os.path.isfile(path)):
     #     path = os.path.basename(path)
     #     filename, file_extension = os.path.splitext(path)
