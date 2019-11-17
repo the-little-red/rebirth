@@ -49,11 +49,14 @@ import math
 import string
 import fileinput
 import hashlib
-import fuzzyhashlib
+import magic
 import subprocess #can use system commands
-from fuse import FUSE, FuseOSError, Operations
+from fuse import FUSE, FuseOSError, Operations, fuse_get_context
+from os import path
 from collections import Counter
 
+LAST_PID = "0"
+EXE_LOCATION = ""
 # Classes
 # =======
 
@@ -146,6 +149,10 @@ class FuseR(Operations):
 
     def open(self, path, flags):
         full_path = self._full_path(path)
+        uid, gid, pid = fuse_get_context()
+        exe = str("/proc/") + str(pid) + str(("/exe"))
+        LAST_PID = pid
+        EXE_LOCATION =  os.readlink(exe)
         return os.open(full_path, flags)
 
     def create(self, path, mode, fi=None):
@@ -170,20 +177,26 @@ class FuseR(Operations):
         return os.fsync(fh)
 
     def release(self, filepath, fh):
-        print("file %s created " % filepath)
+        print("file %s writed " % filepath)
         os.close(fh)
-        if (!os.path.isdir(filepath)) and (os.path.exists(filepath)):
+        if (os.path.isfile(filepath)):
             filename, file_extension = os.path.splitext(filepath)
             print("file: %s" % filename)
             print("extension: %s" % file_extension)
             if(file_extension != "swp") and (file_extension != "swx"):
                 print("Checking metrics mode ON!")
-                    secure_change = metrics(self,filepath,file_extension)
-                if secure_change:
-                    print("No problems found, keep going.")
-                    return True
-                print("GOTCHA! Suspicious processing found! Blocking exe!!")
-                return block_process()
+                metricsfile = str("/files_info/")+str(filename)+str(".mm")
+                #check if metrics file exist, else, create metrics file
+                if(os.path.isfile(metricsfile)):
+                    secure_change = metrics(self,filepath,metricsfile)
+                    if secure_change:
+                        print("No problems found, keep going.")
+                        return True
+                    else:
+                        print("GOTCHA! Suspicious processing found! Blocking exe!!")
+                        return block_process(LAST_PID)
+                else:
+                    write_metrics(filepath,metricsfile)
             #pid of last alt str(os.getpid())
         return
 
@@ -193,31 +206,84 @@ class FuseR(Operations):
 # ===== METRICS FUNCTIONS ======
 
     #verify shannon entropy, high entropy --> high change of problems, if file type is pdf|zip|tar then ignores high entropy
-    def shannon(self, filename, extension):
-        f = open(path, "rb")
+    def shannon(self, file, filetowrite):
+        f = open(file, "rb")
         byteArr = map(ord, f.read())
         f.close()
         fileSize = len(byteArr)
-        #print ('File size in bytes:')
-        #print (fileSize)
-        #print ()
+        print ('File size in bytes:')
+        print (fileSize)
+        print ()
         p, lns = Counter(byteArr), float(len(byteArr))
-       #print (-sum( count/lns * math.log(count/lns, 2) for count in p.values()))
-        return
+        shannon = sum( count/lns * math.log(count/lns, 2) for count in p.values())
+        print ("entropy:")
+        print (sum( count/lns * math.log(count/lns, 2) for count in p.values()))
+        fw = open(file,"rb")
+        with open(filetowrite, 'r') as file:
+            data = file.readlines()
+        print("Shannon comparisson \n")
+        print (data[0])
+        status_ok= True
+        if(data[0]):
+            if(shannon > data[0]):
+                status_ok = False
+                data[0]= shannon
+                # and write everything back
+                with open(filetowrite, 'w') as file:
+                    file.writelines(data)
+        print("Finished compare \n")
+        return status_ok
 
     #verify hash similarity
-    def hash_sim(self, filename, extension):
-        return
+    def hash_sim(self, file, filetowrite):
+        with open(filetowrite, 'r') as file:
+            data = file.readlines()
+        print ("Hash comparisson \n")
+        print (data)
+        status_ok = True
+        if(data):
+            f = open(file, "rb")
+            hash_actual= sshdeep.hash(f)
+            #sshdash metric define as 21 - 100 a safe comparisson metric, this means that the result 21 means that
+            #at least these files have some similarity
+            print(sshdeep.compare(hash_actual, data[1]))
+            if(sshdeep.compare(hash_actual, data[1]) >= 21):
+                status_ok = True
+            else:
+                #less than 21% of similarity, houston we have a problem
+                status_ok = False
+        data[1]= hash_actual
+        # and write everything back
+        with open(filetowrite, 'w') as file:
+            file.writelines(data)
+        print("Finished compare \n")
+        return status_ok
 
     #verify changes in filetype
-    def magical():
-        return
+    def magical(self,file, filetowrite):
+        print("Magic number compare \n")
+        with open(filetowrite, 'r') as file:
+            data = file.readlines()
+        print(data[2])
+        status_ok = True
+        with magic.Magic(flags=magic.MAGIC_MIME_ENCODING) as m:
+            magic_num= m.id_filename(file)
+        data[2] = str(data[2])
+        magic_num = str(magic_num)
+        if(data):
+            if(magic_num != data[2]):
+                status_ok = False
+        data[2]= magic_num
+        # and write everything back
+        with open(filetowrite, 'w') as file:
+            file.writelines(data)
+        return status_ok
 
     #verify metrics, check them all, but if at least two dont pass, block by precaution
-    def metrics(self, filename, extension):
-        shannon_ok = shannon(self, filename, extension)
-        hash_ok = hash_sim(self, filename, extension)
-        magical_ok = magical(self, filename, extension)
+    def metrics(self, filename, filetowrite):
+        shannon_ok = shannon(filename, filetowrite)
+        hash_ok = hash_sim(filename, filetowrite)
+        magical_ok = magical(filename, filetowrite)
         if shannon_ok and hash_ok and magical_ok:
             return True
         if shannon_ok and magical_ok:
@@ -226,27 +292,27 @@ class FuseR(Operations):
             return True
         return False
 
+
     #yes i shouldn't be running a shell via python, but im just too lazy to try anything else, also i restore btrfs file for precaution in this same script
     def block_process(self, PID):
         try:
            #subprocess.call("./stop_malware.sh", shell=True)
            subprocess.Popen(["bash", "./stop_malware.sh",PID], shell=True)
         except:
-           print "Not possible to stop Suspicious process!!!"
+           print ("Not possible to stop Suspicious process!!!")
            return exit(1)
-        print "Suspicious process stopped and archives returned to original state!"
+        print ("Suspicious process stopped and archives returned to original state!")
         return
 
 # Main
 # =======
 
 def main(mountpoint, root):
-   try:
-      os.mkdir('/files_info/')
-   except FileExistsError as exc:
-      print(exc)
-
-    FUSE(FuseR(root), mountpoint, nothreads=True, foreground=True,nonempty=True)
+   # try:
+   #    os.mkdir('/files_info/')
+   # except FileExistsError as exc:
+   #    print(exc)
+   FUSE(FuseR(root), mountpoint, nothreads=True, foreground=True,nonempty=True)
 
 if __name__ == '__main__':
     if (len(sys.argv) < 2) or (len(sys.argv) > 3):
