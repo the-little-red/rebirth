@@ -209,14 +209,10 @@ class FuseR(Operations):
     #verify shannon entropy, high entropy --> high change of problems, if file type is pdf|zip|tar then ignores high entropy
     def shannon(self, file, filetowrite):
         f = open(file, "rb")
-        byteArr = map(ord, f.read())
+        byteArr = f.read()
         f.close()
-        fileSize = len(byteArr)
-        print ('File size in bytes:')
-        print (fileSize)
-        print ()
-        p, lns = Counter(byteArr), float(len(byteArr))
-        shannon = sum( count/lns * math.log(count/lns, 2) for count in p.values())
+        p, lns = Counter(byteArr), float(os.path.getsize(file))
+        shannon = -sum( count/lns * math.log(count/lns, 2) for count in p.values())
         print ("entropy:")
         print (sum( count/lns * math.log(count/lns, 2) for count in p.values()))
         fw = open(file,"rb")
@@ -294,20 +290,20 @@ class FuseR(Operations):
         return False
 
     def write_metrics(self, file, filetowrite):
+        data = [0,0,0]
         f = open(file, "rb")
-        byteArr = map(ord, f.read())
-        f.close()
-        fileSize = len(byteArr)
-        print ('File size in bytes:')
-        print (fileSize)
-        print ()
-        p, lns = Counter(byteArr), float(len(byteArr))
-        data[0] = sum( count/lns * math.log(count/lns, 2) for count in p.values())
-        data[1] = sshdeep.hash(f)
+        byteArr = f.read()
+        p, lns = Counter(byteArr), float(os.path.getsize(file))
+        data[0] = -sum( count/lns * math.log(count/lns, 2) for count in p.values())
+        print("Shannon %f" % data[0])
+        data[1] = ssdeep.hash(byteArr)
+        print("Hash ", data[1])
         with magic.Magic(flags=magic.MAGIC_MIME_ENCODING) as m:
             data[2] = m.id_filename(file)
-        with open(filetowrite, 'w') as file:
-            file.writelines(data)
+        print(data)
+        with open(filetowrite, '+w') as file:
+            for item in data:
+                file.write("%s\n" % item)
         return
 
 
