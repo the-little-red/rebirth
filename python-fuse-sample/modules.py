@@ -48,7 +48,7 @@ def hash_sim(filename, filetowrite):
     old_hash= str(data[1].replace('\n',''))
     print(old_hash)
     status_ok = True
-    hash_actual= str(ssdeep.hash(filename))
+    hash_actual= str(ssdeep.hash_from_file(filename))
     print(hash_actual)
     deep = ssdeep.compare(hash_actual, old_hash)
     print(deep)
@@ -120,7 +120,7 @@ def write_metrics(filename, filetowrite):
     p, lns = Counter(byteArr), float(os.path.getsize(filename))
     data[0] = -sum( count/lns * math.log(count/lns, 2) for count in p.values())
     print("Shannon %f" % data[0])
-    data[1] = ssdeep.hash(filename)
+    data[1] = ssdeep.hash_from_file(filename)
     print("Hash ", data[1])
     with magic.Magic(flags=magic.MAGIC_MIME_ENCODING) as m:
         data[2] = m.id_filename(filename)
