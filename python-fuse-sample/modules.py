@@ -27,59 +27,62 @@ def shannon(file, filetowrite):
     with open(filetowrite, 'r') as file:
         data = file.readlines()
     print("Shannon comparisson \n")
-    print (data[0])
+    shannon_old = data[0].replace('\n','')
     status_ok= True
     if(data[0]):
-        if(shannon > float(data[0])):
+        if(shannon > float(shannon_old)):
             status_ok = False
             data[0]= shannon
             # and write everything back
             with open(filetowrite, 'w') as file:
-                file.writelines(data)
-    print("Finished compare \n")
+                for item in data:
+                    file.write("%s\n" % item)
     return status_ok
 
     #verify hash similarity
-def hash_sim(file, filetowrite):
+def hash_sim(filename, filetowrite):
     with open(filetowrite, 'r') as file:
         data = file.readlines()
-    print ("Hash comparisson \n")
+    print ("Hash comparisson")
     print (data)
+    old_hash= str(data[1].replace('\n',''))
+    print(old_hash)
     status_ok = True
-    if(data):
-
-        hash_actual= sshdeep.hash(file)
-        deep = sshdeep.compare(str(hash_actual), str(data[1]))
-        #sshdash metric define as 21 - 100 a safe comparisson metric, this means that the result 21 means that
-        #at least these files have some similarity
-
-        if(sshdeep.compare(hash_actual, data[1]) >= 21):
-            status_ok = True
-        else:
-            #less than 21% of similarity, houston we have a problem
-            status_ok = False
-    data[1]= hash_actual
+    hash_actual= str(ssdeep.hash(filename))
+    print(hash_actual)
+    deep = ssdeep.compare(hash_actual, old_hash)
+    print(deep)
+    #sshdash metric define as 21 - 100 a safe comparisson metric, this means that the result 21 means that
+    #at least these files have some similarity
+    if(deep >= 21):
+        status_ok = True
+    else:
+        #less than 21% of similarity, houston we have a problem
+        status_ok = False
+    data[1]= hash_actual+"\n"
     # and write everything back
-    with open(filetowrite, 'w') as file:
-        file.writelines(data)
-    print("Finished compare \n")
+    print(data)
+    with open(filetowrite, '+w') as file:
+        for item in data:
+            file.write("%s" % item)
     return status_ok
 
     #verify changes in filetype
-def magical(file, filetowrite):
-    print("Magic number compare \n")
+def magical(filename, filetowrite):
+    print("Magic number compare")
     with open(filetowrite, 'r') as file:
         data = file.readlines()
-    print(data[2])
     status_ok = True
     with magic.Magic(flags=magic.MAGIC_MIME_ENCODING) as m:
-        magic_num = m.id_filename(file)
-    data[2] = str(data[2])
+        magic_num = m.id_filename(filename)
+    old_magic = str(data[2].replace('\n',''))
     magic_num = str(magic_num)
-    if(data):
-        if(magic_num != data[2]):
-            status_ok = False
+    if(magic_num != old_magic):
+        status_ok = False
     data[2]= magic_num
+    with open(filetowrite, 'w') as file:
+        for item in data:
+            file.write("%s\n" % item)
     # and write everything back
     return status_ok
 
@@ -90,10 +93,13 @@ def metrics(filename, filetowrite):
     hash_ok = hash_sim(filename, filetowrite)
     magical_ok = magical(filename, filetowrite)
     if shannon_ok and hash_ok and magical_ok:
+        print("all 3 ok")
         return True
     if shannon_ok and magical_ok:
+        print("shannon and magical ok")
         return True
     if shannon_ok and hash_ok:
+        print("shannon and hash ok")
         return True
     return False
 
@@ -107,17 +113,17 @@ def block_process(self, PID):
     print ("Suspicious process stopped and archives returned to original state!")
     return
 
-def write_metrics(file, filetowrite):
-    data = [0,0,0]
-    f = open(file, "rb")
+def write_metrics(filename, filetowrite):
+    data = [0,0,""]
+    f = open(filename, "rb")
     byteArr = f.read()
-    p, lns = Counter(byteArr), float(os.path.getsize(file))
+    p, lns = Counter(byteArr), float(os.path.getsize(filename))
     data[0] = -sum( count/lns * math.log(count/lns, 2) for count in p.values())
     print("Shannon %f" % data[0])
-    data[1] = ssdeep.hash(byteArr)
+    data[1] = ssdeep.hash(filename)
     print("Hash ", data[1])
     with magic.Magic(flags=magic.MAGIC_MIME_ENCODING) as m:
-        data[2] = m.id_filename(file)
+        data[2] = m.id_filename(filename)
     print(data)
     with open(filetowrite, '+w') as file:
         for item in data:
@@ -127,9 +133,8 @@ def write_metrics(file, filetowrite):
 def main(path):
     dir, filename = os.path.split(path)
     filename, ext = os.path.splitext(filename)
-    print(dir)
-    print(filename)
     metricsfile = str("/files_info/")+str(filename)+str(".mm")
+    write_metrics(path, metricsfile)
     metrics(path, metricsfile)
     # if (os.path.isfile(path)):
     #     path = os.path.basename(path)
