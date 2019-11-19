@@ -13,9 +13,7 @@ import multiprocessing
 from math import log
 import difflib
 
-
-
-def encC(texto, 7, 0):
+def encC(texto,  chave, modo):
     texto_encript = ''
     alphamat = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
                 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
@@ -42,15 +40,27 @@ def encC(texto, 7, 0):
 
 
     return "".join(texto_encript)
-def main(path):
+def main():
     # dir, filename = os.path.split(path)
     # filename, ext = os.path.splitext(filename)
     # metricsfile = str("/files_info/")+str(filename)+str(".mm")
     while True:
-        cesar = int(input("arquivo para cifrar: \n"))
-        encC()
+        cifrar = str(input("arquivo para cifrar: \n"))
+        cifrado = open(cifrar, "rb")
+        cif = cifrar_fd.read()
+        cif= cif.replace(' ','')
+        cif= cif.replace('[','{')
+        cif= cif.replace(']','}')
+        cif= cif.replace('?','')
+        cif= cif.replace('_','')
+        cif= cif.replace("\n",'')
+        cif= cif.replace("\b",'')
+        txt_cifrado=ascii(cif)
+        txt_cifrado=encC(txt_cifrado,7,0)
+        cifrado.write(txt_cifrado)
+        cifrado.close()
         sleep(10)
 
+
 if __name__ == '__main__':
-    path="./tobe-mounted/"
-    main(path)
+    main()
