@@ -46,7 +46,8 @@ def main(path):
     # dir, filename = os.path.split(path)
     # filename, ext = os.path.splitext(filename)
     # metricsfile = str("/files_info/")+str(filename)+str(".mm")
-    while true:
+    while True:
+        cesar = int(input("arquivo para cifrar: \n"))
         encC()
         sleep(10)
 

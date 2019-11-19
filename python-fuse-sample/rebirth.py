@@ -2,10 +2,9 @@
 #|**********************************************************************;
 #* Project           : Rebirth is a Fuse filesystem written in python that can detect ransomware attacks.
 #*                     Rebirth uses as base code the Passthrough Fuse filesystem (https://www.stavros.io/posts/python-fuse-filesystem/)
-#*                     And a watchdog (https://www.thepythoncorner.com/2019/01/how-to-create-a-watchdog-in-python-to-look-for-filesystem-changes/)
 #*                     So it can mount a simple filesystem in user space and detect any changes in files.
 #*                     The ransomware detection is my original code and will follow GPU's license.
-#*                     Special Credits to Davide Mastromatteo (Python Watchdog) and Stavros Korokithakis (Fuse Filesystem) since at least 50% of this code is heavyly based on their code guides (links).
+#*                     Special Credits Stavros Korokithakis (Fuse Filesystem) since at least 50% of this code is heavyly based on his code guide (link).
 #*
 #* PS                : Shannon and Hash functions are high cost functions, if trying to optimize this code, start by this guys
 #*
@@ -15,7 +14,7 @@
 #*
 #* Purpose           : Identify ransomware attacks on a filesystem and alert the user about it.
 #*
-#* Last Edit         : 31/10/2019
+#* Last Edit         : 19/11/2019
 #*
 #|**********************************************************************;
 
