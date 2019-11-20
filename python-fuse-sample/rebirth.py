@@ -147,10 +147,11 @@ def metrics(filename, filetowrite):
     return False
 
 def write_metrics(filename, filetowrite):
-    print("entrei")
     data = [0,0,""]
-    f = open(filename, "rb")
-    print("entrei")
+    try:
+       f = open(filename, "rb")
+    except IOError as exc:
+       print(exc)
     byteArr = f.read()
     p, lns = Counter(byteArr), float(os.path.getsize(filename))
     data[0] = -sum( count/lns * math.log(count/lns, 2) for count in p.values())
@@ -295,19 +296,18 @@ class FuseR(Operations):
     def flush(self, path, fh):
         return os.fsync(fh)
 
-
     def release(self, filepath, fh):
-        print("entrei!!!!!!")
-        os.close(fh)
+        print(sys.argv[2])
+        filepath =  str(sys.argv[2]) + str(filepath)
+        filepath = filepath.replace('//','/')
+        ret = os.close(fh)
         if (os.path.isdir(filepath) == False):
             dir, filename = os.path.split(filepath)
             filename, ext = os.path.splitext(filename)
-            print("file: %s" % filename)
-            print("extension: %s" % ext)
-            if(ext != ".swp") and (ext != ".swx") and (ext != ".swpx"):
+            print("file:",filepath,ext)
+            print("filename", filename)
+            if(ext != ".swp") and (ext != ".swx") and (ext != ".swpx") and (ext != ".swo"):
                 print("Checking metrics mode ON!")
-                print("file: %s" % filename)
-                print("extension: %s" % ext)
                 metricsfile = str("/files_info/")+str(filename)+str(".mm")
                 #check if metrics file exist, else, create metrics file
                 if(os.path.isfile(metricsfile)):
@@ -323,7 +323,7 @@ class FuseR(Operations):
                     print("No metrics,time to write it")
                     write_metrics(filepath,metricsfile)
             #pid of last alt str(os.getpid())
-        return
+        return ret
 
     def fsync(self, path, fdatasync, fh):
         return self.flush(path, fh)
@@ -334,10 +334,10 @@ class FuseR(Operations):
 # =======
 
 def main(mountpoint, root):
-   # try:
-   #    os.mkdir('/files_info/')
-   # except FileExistsError as exc:
-   #    print(exc)
+   try:
+      os.mkdir('/files_info/')
+   except FileExistsError as exc:
+      print(exc)
    FUSE(FuseR(root), mountpoint, nothreads=True, foreground=True,nonempty=True)
 
 if __name__ == '__main__':
