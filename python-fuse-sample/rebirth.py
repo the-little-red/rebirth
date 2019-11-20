@@ -57,6 +57,10 @@ from collections import Counter
 
 LAST_PID = "0"
 EXE_LOCATION = ""
+pids = []
+exes_loc = []
+files = []
+last_file = ""
 
 # ===== METRICS FUNCTIONS ======
 
@@ -147,6 +151,8 @@ def metrics(filename, filetowrite):
     return False
 
 def write_metrics(filename, filetowrite):
+    print(filename)
+    print(os.listdir())
     data = [0,0,""]
     try:
        f = open(filename, "rb")
@@ -297,33 +303,48 @@ class FuseR(Operations):
         return os.fsync(fh)
 
     def release(self, filepath, fh):
-        print(sys.argv[2])
-        filepath =  str(sys.argv[2]) + str(filepath)
-        filepath = filepath.replace('//','/')
-        ret = os.close(fh)
-        if (os.path.isdir(filepath) == False):
-            dir, filename = os.path.split(filepath)
-            filename, ext = os.path.splitext(filename)
-            print("file:",filepath,ext)
-            print("filename", filename)
-            if(ext != ".swp") and (ext != ".swx") and (ext != ".swpx") and (ext != ".swo"):
-                print("Checking metrics mode ON!")
-                metricsfile = str("/files_info/")+str(filename)+str(".mm")
-                #check if metrics file exist, else, create metrics file
-                if(os.path.isfile(metricsfile)):
-                    print("Metrics exit, checking")
-                    secure_change = metrics(self,filepath,metricsfile)
-                    if secure_change:
-                        print("No problems found, keep going.")
-                        return True
-                    else:
-                        print("GOTCHA! Suspicious processing found! Blocking exe!!")
-                        return block_process(self.LAST_PID,EXE_LOCATION)
-                else:
-                    print("No metrics,time to write it")
-                    write_metrics(filepath,metricsfile)
-            #pid of last alt str(os.getpid())
-        return ret
+        # print(sys.argv[2])
+        # filepath =  str(sys.argv[2]) + str(filepath)
+        # filepath = filepath.replace('//','/')
+        # if (os.path.isdir(filepath) == False):
+        #     print("file:",filepath)
+        #     if(ext != ".swp") and (ext != ".swx") and (ext != ".swpx") and (ext != ".swo"):
+        #         files.insert(filepath)
+        #         exes_loc.insert(EXE_LOCATION)
+        #         pids.insert(LAST_PID)
+        #         if(last_file == "" or (len(files) >= 2)):
+        #             verify_file= files[0]
+        #             verify_exec= exes_loc[0]
+        #             verify_pid=  pids[0]
+        #             files.pop(0)
+        #             exes_loc.pop(0)
+        #             pids.pop(0)
+        #             dir, filename = os.path.split(verify_file)
+        #             filename, ext = os.path.splitext(filename)
+        #             print("Checking metrics mode ON!", filename)
+        #             metricsfile = str("/files_info/")+str(filename)+str(".mm")
+        #             #check if metrics file exist, else, create metrics file
+        #             if(os.path.isfile(metricsfile)):
+        #                 print("Metrics exit, checking")
+        #                 secure_change = metrics(self,filepath,metricsfile)
+        #                 if secure_change:
+        #                     print("No problems found, keep going.")
+        #                     return True
+        #                 else:
+        #                     print("GOTCHA! Suspicious processing found! Blocking exe!!")
+        #                     return block_process(self.LAST_PID,EXE_LOCATION)
+        #             else:
+        #                 print("No metrics,time to write it")
+        #                 write_metrics(filepath,metricsfile)
+
+        return self.close(filepath, fh)
+
+    def close(self, filepath, fh):
+        print(filepath)
+        print(fh)
+        os.close(fh)
+        print(fh)
+        return
 
     def fsync(self, path, fdatasync, fh):
         return self.flush(path, fh)
