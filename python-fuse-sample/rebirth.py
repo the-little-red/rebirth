@@ -57,6 +57,125 @@ from collections import Counter
 
 LAST_PID = "0"
 EXE_LOCATION = ""
+
+# ===== METRICS FUNCTIONS ======
+
+#verify shannon entropy, high entropy --> high change of problems, if file type is pdf|zip|tar then ignores high entropy
+def shannon(filename, filetowrite):
+    f = open(file, "rb")
+    byteArr = f.read()
+    f.close()
+    p, lns = Counter(byteArr), float(os.path.getsize(file))
+    shannon = -sum( count/lns * math.log(count/lns, 2) for count in p.values())
+    fw = open(file,"rb")
+    with open(filetowrite, 'r') as file:
+        data = file.readlines()
+    print("Shannon comparisson \n")
+    shannon_old = data[0].replace('\n','')
+    status_ok= True
+    if(data[0]):
+        if(shannon > float(shannon_old)):
+            status_ok = False
+            data[0]= shannon
+            # and write everything back
+            with open(filetowrite, 'w') as file:
+                for item in data:
+                    file.write("%s\n" % item)
+    return status_ok
+    #verify hash similarity
+
+def hash_sim(filename, filetowrite):
+    with open(filetowrite, 'r') as file:
+        data = file.readlines()
+    print ("Hash comparisson")
+    print (data)
+    old_hash= str(data[1].replace('\n',''))
+    print(old_hash)
+    status_ok = True
+    hash_actual= str(ssdeep.hash_from_file(filename))
+    print(hash_actual)
+    deep = ssdeep.compare(hash_actual, old_hash)
+    print(deep)
+    #sshdash metric define as 21 - 100 a safe comparisson metric, this means that the result 21 means that
+    #at least these files have some similarity
+    if(deep >= 21):
+        status_ok = True
+    else:
+        #less than 21% of similarity, houston we have a problem
+        status_ok = False
+    data[1]= hash_actual+"\n"
+    # and write everything back
+    print(data)
+    with open(filetowrite, '+w') as file:
+        for item in data:
+            file.write("%s" % item)
+    return status_ok
+
+#verify changes in filetype
+def magical(filename, filetowrite):
+    print("Magic number compare")
+    with open(filetowrite, 'r') as file:
+        data = file.readlines()
+    status_ok = True
+    with magic.Magic(flags=magic.MAGIC_MIME_ENCODING) as m:
+        magic_num = m.id_filename(filename)
+    old_magic = str(data[2].replace('\n',''))
+    magic_num = str(magic_num)
+    if(magic_num != old_magic):
+        status_ok = False
+    data[2]= magic_num
+    with open(filetowrite, 'w') as file:
+        for item in data:
+            file.write("%s\n" % item)
+    # and write everything back
+    return status_ok
+
+#verify metrics, check them all, but if at least two dont pass, block by precaution
+def metrics(filename, filetowrite):
+    shannon_ok = shannon(filename, filetowrite)
+    hash_ok = hash_sim(filename, filetowrite)
+    magical_ok = magical(filename, filetowrite)
+    if shannon_ok and hash_ok and magical_ok:
+        print("all 3 ok")
+        return True
+    if shannon_ok and magical_ok:
+        print("shannon and magical ok")
+        return True
+    if shannon_ok and hash_ok:
+        print("shannon and hash ok")
+        return True
+    return False
+
+def write_metrics(filename, filetowrite):
+    print("entrei")
+    data = [0,0,""]
+    f = open(filename, "rb")
+    print("entrei")
+    byteArr = f.read()
+    p, lns = Counter(byteArr), float(os.path.getsize(filename))
+    data[0] = -sum( count/lns * math.log(count/lns, 2) for count in p.values())
+    print("Shannon %f" % data[0])
+    data[1] = ssdeep.hash_from_file(filename)
+    print("Hash ", data[1])
+    with magic.Magic(flags=magic.MAGIC_MIME_ENCODING) as m:
+        data[2] = m.id_filename(filename)
+    print(data)
+    with open(filetowrite, '+w') as file:
+        for item in data:
+            file.write("%s\n" % item)
+    return
+
+    #yes i shouldn't be running a shell via python, but im just too lazy to try anything else, also i restore btrfs file for precaution in this same script
+def block_process(self, PID, LOCATION):
+    try:
+       #subprocess.call("./stop_malware.sh", shell=True)
+       subprocess.Popen(["bash", "./stop_malware.sh",PID,LOCATION], shell=True)
+    except:
+       print ("Not possible to stop Suspicious process!!!")
+       return exit(1)
+    print ("Suspicious process stopped and archives returned to original state!")
+    return
+
 # Classes
 # =======
 
@@ -176,19 +295,23 @@ class FuseR(Operations):
     def flush(self, path, fh):
         return os.fsync(fh)
 
+
     def release(self, filepath, fh):
-        print("file %s writed " % filepath)
+        print("entrei!!!!!!")
         os.close(fh)
-        if (os.path.isfile(filepath)):
+        if (os.path.isdir(filepath) == False):
             dir, filename = os.path.split(filepath)
             filename, ext = os.path.splitext(filename)
             print("file: %s" % filename)
-            print("extension: %s" % file_extension)
-            if(file_extension != "swp") and (file_extension != "swx"):
+            print("extension: %s" % ext)
+            if(ext != ".swp") and (ext != ".swx") and (ext != ".swpx"):
                 print("Checking metrics mode ON!")
+                print("file: %s" % filename)
+                print("extension: %s" % ext)
                 metricsfile = str("/files_info/")+str(filename)+str(".mm")
                 #check if metrics file exist, else, create metrics file
                 if(os.path.isfile(metricsfile)):
+                    print("Metrics exit, checking")
                     secure_change = metrics(self,filepath,metricsfile)
                     if secure_change:
                         print("No problems found, keep going.")
@@ -197,6 +320,7 @@ class FuseR(Operations):
                         print("GOTCHA! Suspicious processing found! Blocking exe!!")
                         return block_process(self.LAST_PID,EXE_LOCATION)
                 else:
+                    print("No metrics,time to write it")
                     write_metrics(filepath,metricsfile)
             #pid of last alt str(os.getpid())
         return
@@ -204,122 +328,7 @@ class FuseR(Operations):
     def fsync(self, path, fdatasync, fh):
         return self.flush(path, fh)
 
-# ===== METRICS FUNCTIONS ======
 
-    #verify shannon entropy, high entropy --> high change of problems, if file type is pdf|zip|tar then ignores high entropy
-    def shannon(self, file, filetowrite):
-        f = open(file, "rb")
-        byteArr = f.read()
-        f.close()
-        p, lns = Counter(byteArr), float(os.path.getsize(file))
-        shannon = -sum( count/lns * math.log(count/lns, 2) for count in p.values())
-        fw = open(file,"rb")
-        with open(filetowrite, 'r') as file:
-            data = file.readlines()
-        print("Shannon comparisson \n")
-        shannon_old = data[0].replace('\n','')
-        status_ok= True
-        if(data[0]):
-            if(shannon > float(shannon_old)):
-                status_ok = False
-                data[0]= shannon
-                # and write everything back
-                with open(filetowrite, 'w') as file:
-                    for item in data:
-                        file.write("%s\n" % item)
-        return status_ok
-
-    #verify hash similarity
-    def hash_sim(self, file, filetowrite):
-        with open(filetowrite, 'r') as file:
-            data = file.readlines()
-        print ("Hash comparisson")
-        print (data)
-        old_hash= str(data[1].replace('\n',''))
-        print(old_hash)
-        status_ok = True
-        hash_actual= str(ssdeep.hash_from_file(filename))
-        print(hash_actual)
-        deep = ssdeep.compare(hash_actual, old_hash)
-        print(deep)
-        #sshdash metric define as 21 - 100 a safe comparisson metric, this means that the result 21 means that
-        #at least these files have some similarity
-        if(deep >= 21):
-            status_ok = True
-        else:
-            #less than 21% of similarity, houston we have a problem
-            status_ok = False
-        data[1]= hash_actual+"\n"
-        # and write everything back
-        print(data)
-        with open(filetowrite, '+w') as file:
-            for item in data:
-                file.write("%s" % item)
-        return status_ok
-
-    #verify changes in filetype
-    def magical(self,file, filetowrite):
-        print("Magic number compare")
-        with open(filetowrite, 'r') as file:
-            data = file.readlines()
-        status_ok = True
-        with magic.Magic(flags=magic.MAGIC_MIME_ENCODING) as m:
-            magic_num = m.id_filename(filename)
-        old_magic = str(data[2].replace('\n',''))
-        magic_num = str(magic_num)
-        if(magic_num != old_magic):
-            status_ok = False
-        data[2]= magic_num
-        with open(filetowrite, 'w') as file:
-            for item in data:
-                file.write("%s\n" % item)
-        # and write everything back
-        return status_ok
-
-    #verify metrics, check them all, but if at least two dont pass, block by precaution
-    def metrics(self, filename, filetowrite):
-        shannon_ok = shannon(filename, filetowrite)
-        hash_ok = hash_sim(filename, filetowrite)
-        magical_ok = magical(filename, filetowrite)
-        if shannon_ok and hash_ok and magical_ok:
-            print("all 3 ok")
-            return True
-        if shannon_ok and magical_ok:
-            print("shannon and magical ok")
-            return True
-        if shannon_ok and hash_ok:
-            print("shannon and hash ok")
-            return True
-        return False
-
-    def write_metrics(self, file, filetowrite):
-        data = [0,0,""]
-        f = open(filename, "rb")
-        byteArr = f.read()
-        p, lns = Counter(byteArr), float(os.path.getsize(filename))
-        data[0] = -sum( count/lns * math.log(count/lns, 2) for count in p.values())
-        print("Shannon %f" % data[0])
-        data[1] = ssdeep.hash_from_file(filename)
-        print("Hash ", data[1])
-        with magic.Magic(flags=magic.MAGIC_MIME_ENCODING) as m:
-            data[2] = m.id_filename(filename)
-        print(data)
-        with open(filetowrite, '+w') as file:
-            for item in data:
-                file.write("%s\n" % item)
-        return
-
-
-    #yes i shouldn't be running a shell via python, but im just too lazy to try anything else, also i restore btrfs file for precaution in this same script
-    def block_process(self, PID, LOCATION):
-        try:
-           #subprocess.call("./stop_malware.sh", shell=True)
-           subprocess.Popen(["bash", "./stop_malware.sh",PID,LOCATION], shell=True)
-        except:
-           print ("Not possible to stop Suspicious process!!!")
-           return exit(1)
-        print ("Suspicious process stopped and archives returned to original state!")
-        return
 
 # Main
 # =======
