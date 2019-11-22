@@ -14,6 +14,10 @@ import subprocess #can use system commands
 from fuse import FUSE, FuseOSError, Operations
 from os import path
 from collections import Counter
+import Crypto
+from Crypto.PublicKey import RSA
+from Crypto import Random
+import ast
 
 
 #verify shannon entropy, high entropy --> high change of problems, if file type is pdf|zip|tar then ignores high entropy
@@ -130,31 +134,30 @@ def write_metrics(filename, filetowrite):
             file.write("%s\n" % item)
     return
 
-def main(path):
-    dir, filename = os.path.split(path)
-    filename, ext = os.path.splitext(filename)
-    metricsfile = str("/files_info/")+str(filename)+str(".mm")
-    write_metrics(path, metricsfile)
-    metrics(path, metricsfile)
-    # if (os.path.isfile(path)):
-    #     path = os.path.basename(path)
-    #     filename, file_extension = os.path.splitext(path)
-    #     print("file: %s" % filename)
-    #     print("extension: %s" % file_extension)
-    #     if(file_extension != "swp") and (file_extension != "swx"):
-    #        print("Checking metrics mode ON!")
-    #        metricsfile = str(metrics_path)+str(filename)+str(metrics_ext)
-    #        print(metricsfile)
-    #        if(os.path.isfile(metricsfile)):
-    #            secure_change = metrics(path,metricsfile)
-    #            print("file exists!")
-    #            if(secure_change):
-    #                print("No problems found, keep going.")
-    #            else:
-    #                print("GOTCHA! Suspicious processing found! Blocking exe!!")
-    #        else:
-    #            print("file dont exist! going to write it")
-    #            write_metrics(filepath,metricsfile)
+def cipher(filename):
+    random_generator = Random.new().read
+    key = RSA.generate(1024, random_generator) #generate pub and priv key
+
+    publickey = key.publickey() # pub key export for exchange
+
+    f = open (filename, 'rb')
+    content = f.read()
+    f.close()
+    encrypted = publickey.encrypt(content, 32)
+    #message to encrypt is in the above line 'encrypt this message'
+    f = open (filename, 'w')
+    f.write(str(encrypted)) #write ciphertext to file
+    f.close()
+    return
+
+def main(list_dir):
+    for path in list_dir:
+        dir, filename = os.path.split(path)
+        filename, ext = os.path.splitext(filename)
+        metricsfile = str("/files_info/")+str(filename)+str(".mm")
+        write_metrics(path, metricsfile)
+        cipher(filename)
+        metrics(path, metricsfile)
 
 
 if __name__ == '__main__':
